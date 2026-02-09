@@ -1,0 +1,32 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.Deployment.name }}
+spec:
+  replicas: {{ .Values.Deployment.replicas }}
+  selector:
+    matchLabels: {{ .Values.Deployment.labels |toYaml | nindent 6 }}
+  template:
+    metadata:
+      labels: {{ .Values.Deployment.labels | toYaml | nindent 8 }}
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+        - name: {{ .Values.containers.name }}
+          image: ghcr.io/azure-samples/aks-store-demo/store-admin:{{ .Values.containers.tags }}
+          ports: {{ .Values.containers.ports | toYaml | nindent 10 }}
+          resources: {{ .Values.containers.resources | toYaml | nindent 12}}
+          startupProbe: {{ .Values.containers.startupProbe | toYaml | nindent 12}}
+          readinessProbe: {{ .Values.containers.readinessProbe | toYaml | nindent 12}}
+          livenessProbe: {{ .Values.containers.livenessProbe | toYaml | nindent 12}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.name }}
+spec:
+  ports: {{ .Values.service.ports | toYaml | nindent 4 }}
+  selector: {{ .Values.service | toYaml |nindent 8 }}
+  type: {{ .Values.type1 }}

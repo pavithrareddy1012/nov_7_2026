@@ -1,0 +1,62 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap.name}}
+data:
+  ORDER_QUEUE_PORT: "5672"
+  ORDER_QUEUE_HOSTNAME: "rabbitmq"
+  ORDER_QUEUE_NAME: "orders"
+  FASTIFY_ADDRESS: "0.0.0.0"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.secret.name}}
+data:
+  ORDER_QUEUE_USERNAME: dXNlcm5hbWU=
+  ORDER_QUEUE_PASSWORD: cGFzc3dvcmQ=
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.Deployment.name}}
+spec:
+  replicas: {{ .Values.Deployment.replicas}}
+  selector:
+    matchLabels: {{.Values.Deployment.labels | toYaml| nindent 4}}
+  template:
+    metadata:
+      labels: {{ .Values.Deployment.labels | toYaml | nindent 6 }}
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+        - name: {{ .Values.containers.name }}
+          image: ghcr.io/azure-samples/aks-store-demo/order-service:{{ .Values.containers.tags}}
+          ports: {{ .Values.containers.ports | toYaml | nindent 8 }}
+          envFrom:
+            - configMapRef:
+                name: order-service-configs
+            - secretRef:
+                name: order-service-secrets
+          resources: {{ .Values.containers.resources | toYaml | nindent 12}}
+          startupProbe: {{ .Values.containers.startupProbe |toYaml | nindent 12}}
+          readinessProbe: {{ .Values.containers.readinessProbe |toYaml | nindent 12}}
+          livenessProbe: {{ .Values.containers.livenessProbe |toYaml | nindent 12}}
+      initContainers:
+        - name: {{ .Values.containers.name }}
+          image: busybox:{{ .Values.containers.tags}}
+          command:
+            ["sh", "-c", "until nc -zv rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done;"]
+          resources: {{ .Values.containers.resources | toYaml | nindent 12}}
+            
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.name }}
+spec:
+  type: ClusterIP
+  ports: {{ .Values.service.ports | toYaml | nindent 4 }}
+  selector: {{ .Values.service | toYaml | nindent 8 }}

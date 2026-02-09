@@ -1,0 +1,53 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.statefulset.name }}
+spec:
+  serviceName: mongodb
+  replicas: {{ .Values.statefulset.replicas }}
+  selector:
+    matchLabels: {{ .Values.statefulset.labels | toYaml | nindent 6 }}
+  template:
+    metadata:
+      labels: {{ .Values.statefulset.labels | toYaml | nindent 8 }}
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+        - name: mongodb
+          image: mcr.microsoft.com/mirror/docker/library/mongo:{{ .Values.container.tags }}
+          ports: {{ .Values.containers.ports | toYanl | nindent 12 }}
+            - containerPort: {{ .Values.container.ports.containerPort }}
+              name: {{ .Values.statefulset.name }}
+          resources: {{ .Values.container.resources | toYaml | nindent 12 }}
+          livenessProbe:
+            exec:
+              command:
+                - mongo
+                - "--eval"
+                - db.runCommand('ping').ok
+            initialDelaySeconds: {{ .Values.livenessprobe.initialdelayseconds }}
+            periodSeconds: {{ .Values.livenessprobe.periodseconds }}
+            timeoutSeconds: {{ .Values.livenessprobe.timeoutseconds }}
+            failureThreshold: {{ .Values.livenessprobe.failurethreshold }}
+          readinessProbe:
+            exec:
+              command:
+                - mongo
+                - "--eval"
+                - db.runCommand('ping').ok
+            initialDelaySeconds: {{ .Values.readinessprobe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessprobe.periodSeconds }}
+            timeoutSeconds:  {{ .Values.readinessprobe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessprobe.failureThreshold }}
+---
+            apiversion: v1
+            kind: service
+            metadata:
+              name: {{ .Values.statefulset.name }}   
+            spec:
+              ports:
+                - port: {{ .Values.container.ports.containerPort }}
+              selector: {{ .Values.statefulset.labels | toYaml | nindent 17 }}
+              type: {{.Values.type }}

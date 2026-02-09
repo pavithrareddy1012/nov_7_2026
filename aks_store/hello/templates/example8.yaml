@@ -1,0 +1,53 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.Deployment.name }}
+spec:
+  replicas: {{ .Values.Deployment.replicas }}
+  selector:
+    matchLabels: {{ .Values.Deployment.labels | toYaml | nindent 6 }}
+  template:
+    metadata:
+      labels: {{ .Values.Deployment.labels | toYaml | nindent 8 }}
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+        - name: {{ .Values.containers.nmae }}
+          image: ghcr.io/azure-samples/aks-store-demo/virtual-customer:{{ .Values.containers.tags }}
+          env:
+            - name: ORDER_SERVICE_URL
+              value: http://order-service:3000/
+            - name: ORDERS_PER_HOUR
+              value: "100"
+          resources: {{ .Values.containers.resources | toYaml | nindent 12}}
+          readinessProbe: {{ .Values.containers.readinessProbe | toYaml | nindent 12}}
+          livenessProbe: {{ .Values.containers.livenessProbe | toYaml | nindent 12 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.Deployment.name }}
+spec:
+  replicas: {{ .Values.Deployment.replicas }}
+  selector:
+    matchLabels: {{ .Values.Deployment.labels |toYaml | nindent 4 }}
+  template:
+    metadata:
+      labels: {{ .Values.Deployment.labels | toYaml | nindent 6 }}
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+        - name: {{ .Values.containers.nmae }}
+          image: ghcr.io/azure-samples/aks-store-demo/virtual-worker:{{ .Values.containers.tags }}
+          env:
+            - name: MAKELINE_SERVICE_URL
+              value: http://makeline-service:3001
+            - name: ORDERS_PER_HOUR
+              value: "100"
+          resources: {{ .Values.containers.resources | toYaml | nindent 12}}
+          readinessProbe: {{ .Values.containers.readinessProbe | toYaml | nindent 12}}
+          livenessProbe: {{ .Values.containers.livenessProbe | toYaml | nindent 12}}
+           

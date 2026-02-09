@@ -1,0 +1,63 @@
+
+
+---
+apiVersion: v1
+data:
+  rabbitmq_enabled_plugins: |
+    [rabbitmq_management,rabbitmq_prometheus,rabbitmq_amqp1_0].
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap.name }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.secrets.name }}
+data:
+  RABBITMQ_DEFAULT_USER: dXNlcm5hbWU=
+  RABBITMQ_DEFAULT_PASS: cGFzc3dvcmQ=
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+spec:
+  serviceName: {{ .Values.rabbit.serviceName }}
+  replicas: {{ .Values.rabbit.replicas }}
+  selector:
+    matchLabels: {{ .Values.rabbit.labels | toYaml |nindent 6 }}
+  template:
+    metadata:
+      labels: {{ .Values.rabbit.labels | toYaml |nindent 8 }}
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+        - name: {{ .Values.containers.name }}
+          image: mcr.microsoft.com/azurelinux/base/rabbitmq-server:{{ .Values.containers.tags }}
+          ports: {{ .Values.containers.ports | toYaml | nindent 12 }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.secrets.name }}
+          resources: {{ .Values.containers.resources | toYaml | nindent 12}}
+          startupProbe: {{ .Values.containers.startupprobe | toYaml | nindent 12 }}
+          readinessProbe: {{ .Values.containers.readinessprobe | toYaml | nindent 12 }}
+          livenessProbe: {{ .Values.containers.livenessprobe | toYaml | nindent 12 }}
+          volumeMounts: {{ .Values.containers.volumeMounts | toYaml | nindent 12 }}
+      volumes:
+        - name: {{ .Values.configmap.name }}
+          configMap:
+            name: {{ .Values.configmap.name }}
+            items:
+              - key: {{ .Values.configmap.name }}
+                path: {{.Values.path }}
+---                
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.rabbit.name }}
+spec:
+  selector: {{ .Values.rabbit.labels | toYaml |nindent 6 }}
+  ports: {{ .Values.ports | toYaml | nindent 4 }}
+  type: {{ .Values.type1 }}
+          
