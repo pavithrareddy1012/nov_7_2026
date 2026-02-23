@@ -1,0 +1,6 @@
+- name: learing to print
+  hosts: all
+  tasks:
+    - name: print
+      ansible.builtin.debug:
+        var: ansible_facts['distribution']

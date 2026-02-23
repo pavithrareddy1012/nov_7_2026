@@ -1,0 +1,9 @@
+- name: throws an error when run on Ubuntu 22.04
+  hosts: all
+  gather_facts: yes
+  become: no
+  tasks:
+    - name: fail the playbook
+      ansible.builtin.fail:
+        msg: "Dont run this on Ubuntu"
+      when: ansible_facts['distribution'] == "Ubuntu" and ansible_facts['distribution_version'] == "22.04"
